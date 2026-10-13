@@ -216,6 +216,24 @@ class PriorityOverride {
   final DateTime occurredAt;
   final String eventId;
 
+  factory PriorityOverride.fromJson(Map<String, Object?> json) =>
+      PriorityOverride.create(
+        actorId: _required<String>(json, 'actor_id'),
+        reason: _required<String>(json, 'reason'),
+        previous: _parseEnum(
+          _required<String>(json, 'previous_priority'),
+          QueuePriority.values,
+          'previous_priority',
+        ),
+        next: _parseEnum(
+          _required<String>(json, 'new_priority'),
+          QueuePriority.values,
+          'new_priority',
+        ),
+        occurredAt: _date(json, 'occurred_at'),
+        eventId: _required<String>(json, 'event_id'),
+      );
+
   Map<String, Object?> toJson() => {
     'actor_id': actorId,
     'reason': reason,
@@ -320,6 +338,23 @@ class DayCloseReconciliation {
   final int cancelled;
   final int expectedIssued;
   bool get isBalanced => issued == expectedIssued;
+
+  factory DayCloseReconciliation.fromJson(Map<String, Object?> json) =>
+      DayCloseReconciliation(
+        issued: _required<int>(json, 'issued'),
+        served: _required<int>(json, 'served'),
+        waiting: _required<int>(json, 'waiting'),
+        noShow: _required<int>(json, 'no_show'),
+        cancelled: _required<int>(json, 'cancelled'),
+      );
+
+  Map<String, Object?> toJson() => {
+    'issued': issued,
+    'served': served,
+    'waiting': waiting,
+    'no_show': noShow,
+    'cancelled': cancelled,
+  };
 
   static DayCloseReconciliation check({
     required int issued,
