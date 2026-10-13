@@ -59,6 +59,39 @@ class QueueBoardItem {
   );
 }
 
+class CurrentTicketPresentation {
+  const CurrentTicketPresentation({required this.item});
+  final QueueBoardItem item;
+}
+
+class PriorityOverridePresentation {
+  const PriorityOverridePresentation({required this.override});
+  final PriorityOverride override;
+  bool get isValid =>
+      override.reason.trim().isNotEmpty && override.eventId.trim().isNotEmpty;
+}
+
+class AuditPresentation {
+  const AuditPresentation({required this.event});
+  final QueueEvent event;
+  bool get isValid =>
+      event.id.trim().isNotEmpty && event.ticketId.trim().isNotEmpty;
+  String get actorLabel => event.actorId ?? 'Actor tidak tersedia';
+  String get typeLabel => switch (event.type) {
+    QueueEventType.noShow => 'NO-SHOW',
+    QueueEventType.priorityOverride => 'PRIORITY OVERRIDE',
+    QueueEventType.dayClose => 'DAY CLOSE',
+    _ => event.type.name.toUpperCase(),
+  };
+}
+
+class ReconciliationPresentation {
+  const ReconciliationPresentation(this.value);
+  final DayCloseReconciliation value;
+  String get statusLabel =>
+      value.isBalanced ? 'Rekonsiliasi sesuai' : 'Rekonsiliasi tidak sesuai';
+}
+
 class CommandResult<T> {
   const CommandResult(this.kind, {this.value, this.message});
   final CommandResultKind kind;
@@ -71,10 +104,16 @@ class QueueScreenState {
   const QueueScreenState({
     required this.connection,
     this.board = const [],
+    this.currentTicket,
+    this.audit = const [],
+    this.reconciliation,
     this.errorMessage,
   });
   final ConnectionStateKind connection;
   final List<QueueBoardItem> board;
+  final QueueBoardItem? currentTicket;
+  final List<AuditPresentation> audit;
+  final ReconciliationPresentation? reconciliation;
   final String? errorMessage;
   bool get isLoading => connection == ConnectionStateKind.connecting;
   bool get isEmpty => !isLoading && errorMessage == null && board.isEmpty;

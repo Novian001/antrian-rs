@@ -12,13 +12,7 @@ void main() {
 
   testWidgets('shows role context and retry-ready shell', (tester) async {
     await tester.pumpWidget(const AntrianRsApp());
-    expect(find.text('OFFICER'), findsOneWidget);
-    expect(
-      find.text(
-        'Aksi penerbitan dan override hanya berjalan melalui server. Client role hanya untuk visibilitas UX.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('OFFICER · Queue board'), findsOneWidget);
     expect(find.byTooltip('Refresh board'), findsOneWidget);
   });
 

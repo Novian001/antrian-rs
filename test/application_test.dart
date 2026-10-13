@@ -134,4 +134,42 @@ void main() {
       'Estimasi belum tersedia',
     );
   });
+
+  test('override presentation rejects empty reason and keeps audit fields', () {
+    final override = PriorityOverride.create(
+      actorId: 'nurse-1',
+      reason: 'Clinical priority',
+      previous: QueuePriority.normal,
+      next: QueuePriority.priority,
+      occurredAt: DateTime.utc(2026),
+      eventId: 'evt-1',
+    );
+    final presentation = PriorityOverridePresentation(override: override);
+    expect(presentation.isValid, isTrue);
+    expect(override.toJson()['event_id'], 'evt-1');
+    expect(override.toJson()['reason'], 'Clinical priority');
+  });
+
+  test('audit and reconciliation presentations preserve server result', () {
+    final event = QueueEvent(
+      id: 'evt-2',
+      ticketId: 't1',
+      type: QueueEventType.priorityOverride,
+      occurredAt: DateTime.utc(2026),
+      actorId: 'supervisor-1',
+    );
+    expect(AuditPresentation(event: event).isValid, isTrue);
+    expect(AuditPresentation(event: event).typeLabel, 'PRIORITY OVERRIDE');
+    final report = ReconciliationPresentation(
+      DayCloseReconciliation.check(
+        issued: 4,
+        served: 1,
+        waiting: 1,
+        noShow: 1,
+        cancelled: 1,
+      ),
+    );
+    expect(report.statusLabel, 'Rekonsiliasi sesuai');
+    expect(report.value.expectedIssued, 4);
+  });
 }
