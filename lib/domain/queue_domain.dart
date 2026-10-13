@@ -110,6 +110,13 @@ class QueueTicket {
     if (estimated != null && estimated is! int) {
       throw FormatException('Invalid estimated_wait_seconds');
     }
+    if (estimated is int && estimated < 0) {
+      throw ArgumentError.value(
+        estimated,
+        'estimated_wait_seconds',
+        'must not be negative',
+      );
+    }
     return QueueTicket(
       id: _required<String>(json, 'id'),
       number: _required<String>(json, 'number'),
@@ -272,8 +279,12 @@ class QueueEvent {
 
   factory QueueEvent.fromJson(Map<String, Object?> json) {
     final metadata = json['metadata'];
+    final actor = json['actor_id'];
     if (metadata != null && metadata is! Map<String, Object?>) {
       throw FormatException('Invalid metadata');
+    }
+    if (actor != null && actor is! String) {
+      throw FormatException('Invalid actor_id');
     }
     return QueueEvent(
       id: _required<String>(json, 'id'),
@@ -284,7 +295,7 @@ class QueueEvent {
         'type',
       ),
       occurredAt: _date(json, 'occurred_at'),
-      actorId: json['actor_id'] as String?,
+      actorId: actor as String?,
       metadata: metadata == null ? const {} : metadata as Map<String, Object?>,
     );
   }
@@ -340,7 +351,7 @@ class DayCloseReconciliation {
   bool get isBalanced => issued == expectedIssued;
 
   factory DayCloseReconciliation.fromJson(Map<String, Object?> json) =>
-      DayCloseReconciliation(
+      DayCloseReconciliation.check(
         issued: _required<int>(json, 'issued'),
         served: _required<int>(json, 'served'),
         waiting: _required<int>(json, 'waiting'),
@@ -362,11 +373,29 @@ class DayCloseReconciliation {
     required int waiting,
     required int noShow,
     required int cancelled,
-  }) => DayCloseReconciliation(
-    issued: issued,
-    served: served,
-    waiting: waiting,
-    noShow: noShow,
-    cancelled: cancelled,
-  );
+  }) {
+    final values = <String, int>{
+      'issued': issued,
+      'served': served,
+      'waiting': waiting,
+      'noShow': noShow,
+      'cancelled': cancelled,
+    };
+    for (final entry in values.entries) {
+      if (entry.value < 0) {
+        throw ArgumentError.value(
+          entry.value,
+          entry.key,
+          'must not be negative',
+        );
+      }
+    }
+    return DayCloseReconciliation(
+      issued: issued,
+      served: served,
+      waiting: waiting,
+      noShow: noShow,
+      cancelled: cancelled,
+    );
+  }
 }

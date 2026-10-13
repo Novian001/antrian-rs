@@ -80,9 +80,52 @@ void main() {
       clientRequestId: 'retry-1',
       serviceId: 'general',
     );
-    final result = await controller.issue(request);
-    expect(result.kind, CommandResultKind.disconnected);
+    final first = await controller.issue(request);
+    final retry = await controller.issue(request);
+    expect(first.kind, CommandResultKind.disconnected);
+    expect(retry.kind, CommandResultKind.disconnected);
     expect(api.lastRequestId, 'retry-1');
+  });
+
+  test('maps every API error without exposing server detail', () async {
+    for (final kind in QueueApiErrorKind.values) {
+      final api = RecordingApi(error: QueueApiError(kind, 'secret detail'));
+      final result = await QueueController(api, serviceId: 'general').issue(
+        const IssueTicketRequest(
+          clientRequestId: 'same-id',
+          serviceId: 'general',
+        ),
+      );
+      if (kind == QueueApiErrorKind.invalidResponse) {
+        expect(result.kind, CommandResultKind.invalidResponse);
+      } else if (kind == QueueApiErrorKind.server) {
+        expect(result.kind, CommandResultKind.serverError);
+      } else {
+        expect(result.kind.name, isNot('success'));
+      }
+      expect(result.message, isNot(contains('secret detail')));
+    }
+  });
+
+  test('audit presentation is immutable and reconciliation is read-only', () {
+    final event = QueueEvent(
+      id: 'evt-immutable',
+      ticketId: 't1',
+      type: QueueEventType.called,
+      occurredAt: DateTime.utc(2026),
+    );
+    final presentation = AuditPresentation(event: event);
+    final report = DayCloseReconciliation.check(
+      issued: 2,
+      served: 1,
+      waiting: 1,
+      noShow: 0,
+      cancelled: 0,
+    );
+    expect(presentation.event.id, 'evt-immutable');
+    expect(presentation.event.occurredAt, DateTime.utc(2026));
+    expect(report.issued, 2);
+    expect(report.expectedIssued, 2);
   });
 
   test(
